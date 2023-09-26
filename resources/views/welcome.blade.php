@@ -62,6 +62,7 @@
             <div class="container"><p class="m-0 small">Copyright &copy; Your Website 2022</p></div>
         </footer>
         <!-- Bootstrap core JS-->
+        <script src="https://cdn.jsdelivr.net/npm/core-js-bundle@3.32.2/minified.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
         <!-- Core theme JS-->
@@ -82,7 +83,6 @@
                                 </tr>
                             `);
                         })
-                        console.log(data)
                     }
                 })
             }
@@ -90,7 +90,14 @@
 
             function filter(){
                 var filter = $('#filter').val();
+                var head =''
+                if(filter == 'menu'){
+                    head = 'Menu'
+                } else {
+                    head = 'Places'
+                }
                 $.get('/filter',{f:filter},function(data,status,jqXHR){
+                    $('#filtered').html(head);
                     $('#dataTable tbody tr').remove();
                     $.each(data, function(key,value){
                             $('#dataTable tbody').append(`
@@ -107,18 +114,55 @@
             function search(){
                 var filter = $('#filter').val();
                 var search = $('#search').val();
+                var head =''
+                var group =''
+                var text=[];
 
+                const count = [];
+                if(filter == 'menu'){
+                    head = 'Place'
+                } else {
+                    head = 'Menu'
+                }
+                //ajax to get transaction data from database
                 $.get('/search',{f:filter,s:search},function(data,status,jqXHR){
+                    $('#filtered').html(head);
                     $('#dataTable tbody tr').remove();
-                    $.each(data, function(key,value){
-                            $('#dataTable tbody').append(`
+                   
+                    $.each(data,function(key,value){
+                        //ajax to get area/neighborhood name from address from database
+                        $.ajax({
+                            url : `https://api.mapbox.com/geocoding/v5/mapbox.places/${value.alamat}.json?access_token=${accessToken}`,
+                            async : false,
+                            success : function (res){
+                                $.each(res.features, function(index,val){
+                                    if(val.context[0].id.includes('neighborhood')){
+                                        text.push({'area':val.context[0].text})
+                                    }
+                                })
+                            }
+                        })
+                  
+                    })
+            
+                    const groupedArray = text.groupBy(text =>{
+                        //gropu result array base on neighborhood name
+                        return text.area;
+                    });
+                    
+                    const keys = Object.keys(groupedArray); //get keys from grouped array
+                    keys.forEach((value,key) =>{
+                        //show grouped array result
+                        $('#dataTable tbody').append(`
                                 <tr>
-                                    <td>${key +1 }</td>
-                                    <td>${value.result}</td>
-                                    <td>${value.count}</td>
+                                    <td>${key + 1 }</td>
+                                    <td>${value}</td>
+                                    <td>${groupedArray[value].length}</td>
                                 </tr>
                             `);
-                        })
+                    });
+                    
+                 
                 })
             }
             // TO MAKE THE MAP APPEAR YOU MUST

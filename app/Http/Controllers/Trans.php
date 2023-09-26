@@ -57,15 +57,16 @@ class Trans extends Controller
 
     public function search(Request $request){
         if($request->f =='menu'){
-
             $filter = 'menu';
+            $res = 'alamat';
         } else {
+            $res = 'menu';
             $filter = 'alamat';
         }
-        $data = DB::table('trans')->groupBy($filter)
-                ->select(DB::raw('count('.$filter.') as count, '.$filter.' as result'))
+        $data = DB::table('trans')
+                // ->selectRaw('count('.$filter.') as count, trans.'.$res.' as data , '.$filter.' as search')
                 ->where($filter,'like', '%'.$request->s.'%')
-                ->orderBy('count','desc')->get();
+                ->get();
 
         return response()->json($data);
     }
